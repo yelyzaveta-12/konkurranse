@@ -7,8 +7,6 @@
  */
 class KonkurranseController {
     #tabellelement;
-
-    // Filter
     #filterTekst;
     #filterButton;
     #filterButtonTom;
@@ -24,26 +22,22 @@ class KonkurranseController {
     constructor(formelement, tabellelement) {
         this.#tabellelement = tabellelement;
 
-        // Registrering av deltagere
         formelement.addEventListener("submit", event => {
             this.#registrer(event);
         });
 
-        // Startnummer
         const startnummerInput = formelement.elements["startnummer"];
 
         startnummerInput.addEventListener("input", event => {
             this.#validerStartnummer(event.target);
         });
 
-        // Navn
         const navnInput = formelement.elements["navn"];
 
         navnInput.addEventListener("input", event => {
             this.#validerNavn(event.target);
         });
 
-        // Filter
         this.#filterForm = document.forms["filter"];
 
         this.#filterTekst =
@@ -59,18 +53,15 @@ class KonkurranseController {
 
         this.#aktivtFilter = this.#filterForm.querySelector("span");
 
-        // Aktiver filter
         this.#filterForm.addEventListener("submit", event => {
             event.preventDefault();
             this.#aktiverFilter();
         });
 
-        // Tøm filter
         this.#filterButtonTom.addEventListener("click", () => {
             this.#tomFilter();
         });
 
-        // Valider feltene ved oppstart
         this.#validerStartnummer(startnummerInput);
         this.#validerNavn(navnInput);
     }
@@ -145,10 +136,8 @@ class KonkurranseController {
 
         this.#visDeltager(deltager);
 
-        // Tøm skjemaet
         event.target.reset();
 
-        // Valider standardverdiene på nytt
         this.#validerStartnummer(
             event.target.elements["startnummer"]
         );
@@ -215,8 +204,6 @@ class KonkurranseController {
     #visDeltager(deltager) {
         const tbody = this.#tabellelement.tBodies[0];
         const rader = Array.from(tbody.rows);
-
-        // Finn riktig plassering
         const indeks = rader.findIndex(rad => {
             const nummer = Number(rad.cells[0].textContent);
             return deltager.startnummer < nummer;
@@ -225,13 +212,10 @@ class KonkurranseController {
         const newRow = tbody.insertRow(indeks);
         newRow.dataset.startnummer = deltager.startnummer;
 
-        // Startnummer
         newRow.insertCell(-1).textContent = deltager.startnummer;
 
-        // Navn
         newRow.insertCell(-1).textContent = deltager.navn;
 
-        // Starttid
         const startCell = newRow.insertCell(-1);
         const startDato = document.createElement("input");
 
@@ -239,7 +223,6 @@ class KonkurranseController {
         startDato.step = "1";
         startCell.append(startDato);
 
-        // Sluttid
         const sluttCell = newRow.insertCell(-1);
         const sluttDato = document.createElement("input");
 
@@ -247,10 +230,8 @@ class KonkurranseController {
         sluttDato.step = "1";
         sluttCell.append(sluttDato);
 
-        // Løpstid
         const lopstidCell = newRow.insertCell(-1);
 
-        // Valider tider når de endres
         startDato.addEventListener("input", () => {
             this.#validerTid(startDato, sluttDato, lopstidCell);
         });
@@ -259,10 +240,8 @@ class KonkurranseController {
             this.#validerTid(startDato, sluttDato, lopstidCell);
         });
 
-        // Vis tabellen
         this.#tabellelement.classList.remove("hidden");
 
-        // Bruk aktivt filter på den nye deltageren
         if (this.#aktivtMonster !== null) {
             const tekst =
                 newRow.cells[Number(this.#aktivtFelt)].textContent;
@@ -346,7 +325,6 @@ class KonkurranseController {
     }
 }
 
-// Start applikasjonen
 const formelement = document.forms["nydeltager"];
 const tabellelement = document.getElementById("deltagere");
 
