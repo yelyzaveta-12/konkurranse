@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8">
+    <title>Terrengløp</title>
+
+    <link href="konkurranse.css" rel="stylesheet" type="text/css">
+    <script defer src="js/v4k0.js"></script>
+</head>
+
+<body>
+<h1>Terrengløp - Validering</h1>
+<div id="container">
+    <form id="nydeltager">
+        <fieldset>
+            <legend>Legg til deltager</legend>
+            <label for="reg">Startnummer</label>
+            <input id="reg" name="startnummer" type="number" size="4" min="1" value="123"
+                   title="Startnummer er påkrevd" required>
+            <label for="navn">Navn</label>
+            <input id="navn" name="navn" type="text" value="Ole Olsen" placeholder="Navn på deltager"
+                   required
+                   title="Navn må bestå av ett eller flere delnavn skilt av mellomrom eller bindestrek og hvert delnavn må starte med stor forbokstav etterfulgt av kun små bokstaver"
+                   pattern="\s*\p{Lu}\p{Ll}+((\s+|-)\p{Lu}\p{Ll}+)*\s*">
+            <button type="submit">Ny deltager</button>
+        </fieldset>
+    </form>
+
+    <form id="filter">
+        <fieldset>
+            <legend>Filter for visning av deltagere</legend>
+            <label>Mønster: <input type="text" size="10" placeholder="Filtertekst" name="filtertekst"></label>
+            <label>Startnummer: <input type="radio" name="felt" value="0" checked></label>
+            <label>Navn: <input type="radio" name="felt" value="1"></label>
+            <div><button type="submit">Aktiver filter</button><button type="reset">Tøm filter</button></div>
+            <div>Aktivt filter: <span>Ingen</span></div>
+        </fieldset>
+    </form>
+</div>
+
+<table id="deltagere" class="hidden">
+    <thead>
+    <tr>
+        <th>Startnummer</th>
+        <th>Navn</th>
+        <th>Start</th>
+        <th>Slutt</th>
+        <th>Løpstid</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+</body>
+</html>

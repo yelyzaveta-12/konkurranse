@@ -1,0 +1,353 @@
+
+"use strict";
+
+/**
+ * Håndterer innlesing av deltagere, validering,
+ * visning av deltagere og filtrering.
+ */
+class KonkurranseController {
+    #tabellelement;
+
+    // Filter
+    #filterTekst;
+    #filterButton;
+    #filterButtonTom;
+    #filterForm;
+    #aktivtFilter;
+    #aktivtMonster = null;
+    #aktivtFelt = "0";
+
+    /**
+     * @param {HTMLFormElement} formelement
+     * @param {HTMLTableElement} tabellelement
+     */
+    constructor(formelement, tabellelement) {
+        this.#tabellelement = tabellelement;
+
+        // Registrering av deltagere
+        formelement.addEventListener("submit", event => {
+            this.#registrer(event);
+        });
+
+        // Startnummer
+        const startnummerInput = formelement.elements["startnummer"];
+
+        startnummerInput.addEventListener("input", event => {
+            this.#validerStartnummer(event.target);
+        });
+
+        // Navn
+        const navnInput = formelement.elements["navn"];
+
+        navnInput.addEventListener("input", event => {
+            this.#validerNavn(event.target);
+        });
+
+        // Filter
+        this.#filterForm = document.forms["filter"];
+
+        this.#filterTekst =
+            this.#filterForm.elements["filtertekst"];
+
+        this.#filterButton = this.#filterForm.querySelector(
+            "button[type='submit']"
+        );
+
+        this.#filterButtonTom = this.#filterForm.querySelector(
+            "button[type='reset']"
+        );
+
+        this.#aktivtFilter = this.#filterForm.querySelector("span");
+
+        // Aktiver filter
+        this.#filterForm.addEventListener("submit", event => {
+            event.preventDefault();
+            this.#aktiverFilter();
+        });
+
+        // Tøm filter
+        this.#filterButtonTom.addEventListener("click", () => {
+            this.#tomFilter();
+        });
+
+        // Valider feltene ved oppstart
+        this.#validerStartnummer(startnummerInput);
+        this.#validerNavn(navnInput);
+    }
+
+    /**
+     * Aktiverer filteret for startnummer eller navn.
+     */
+    #aktiverFilter() {
+        const monster = this.#filterTekst.value;
+        const valgtFelt = this.#filterForm.elements["felt"].value;
+
+        let regex;
+
+        try {
+            regex = new RegExp(monster, "i");
+        } catch (error) {
+            this.#filterTekst.setCustomValidity(
+                "Ugyldig regulært uttrykk"
+            );
+            this.#filterTekst.reportValidity();
+            return;
+        }
+
+        this.#filterTekst.setCustomValidity("");
+
+        this.#aktivtMonster = regex;
+        this.#aktivtFelt = valgtFelt;
+
+        this.#aktivtFilter.textContent = monster || "Tomt filter";
+
+        const rader = this.#tabellelement.tBodies[0].rows;
+
+        for (const rad of rader) {
+            const tekst = rad.cells[Number(valgtFelt)].textContent;
+
+            regex.lastIndex = 0;
+            rad.classList.toggle("hidden", !regex.test(tekst));
+        }
+    }
+
+    /**
+     * Fjerner filteret og viser alle deltagere.
+     */
+    #tomFilter() {
+        this.#filterTekst.setCustomValidity("");
+        this.#filterTekst.value = "";
+        this.#aktivtFilter.textContent = "Ingen";
+        this.#aktivtMonster = null;
+        this.#aktivtFelt = "0";
+
+        const rader = this.#tabellelement.tBodies[0].rows;
+
+        for (const rad of rader) {
+            rad.classList.remove("hidden");
+        }
+    }
+
+    /**
+     * Registrerer en ny deltager.
+     *
+     * @param {SubmitEvent} event
+     */
+    #registrer(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        const deltager = {
+            startnummer: Number(formData.get("startnummer")),
+            navn: formData.get("navn")
+        };
+
+        this.#visDeltager(deltager);
+
+        // Tøm skjemaet
+        event.target.reset();
+
+        // Valider standardverdiene på nytt
+        this.#validerStartnummer(
+            event.target.elements["startnummer"]
+        );
+
+        this.#validerNavn(
+            event.target.elements["navn"]
+        );
+    }
+
+    /**
+     * Validerer startnummer.
+     *
+     * @param {HTMLInputElement} target
+     */
+    #validerStartnummer(target) {
+        let errormessage = "";
+
+        if (target.validity.valueMissing) {
+            errormessage = "Startnummer er påkrevd";
+        } else if (
+            target.validity.badInput ||
+            target.validity.rangeUnderflow ||
+            target.validity.stepMismatch
+        ) {
+            errormessage =
+                "Startnummer må være et heltall større eller lik 1";
+        } else if (
+            this.#startnummerFinnes(target.valueAsNumber)
+        ) {
+            errormessage = "Startnummer er i bruk";
+        }
+
+        target.setCustomValidity(errormessage);
+        target.title = errormessage;
+    }
+
+    /**
+     * Validerer navnet.
+     *
+     * @param {HTMLInputElement} target
+     */
+    #validerNavn(target) {
+        let errormessage = "";
+
+        if (target.validity.valueMissing) {
+            errormessage = "Navn mangler";
+        } else if (target.validity.patternMismatch) {
+            errormessage =
+                "Navn må bestå av ett eller flere delnavn " +
+                "skilt av mellomrom eller bindestrek og hvert " +
+                "delnavn må starte med stor forbokstav etterfulgt " +
+                "av kun små bokstaver";
+        }
+
+        target.setCustomValidity(errormessage);
+        target.title = errormessage;
+    }
+
+    /**
+     * Viser en deltager sortert etter startnummer.
+     *
+     * @param {Object} deltager
+     */
+    #visDeltager(deltager) {
+        const tbody = this.#tabellelement.tBodies[0];
+        const rader = Array.from(tbody.rows);
+
+        // Finn riktig plassering
+        const indeks = rader.findIndex(rad => {
+            const nummer = Number(rad.cells[0].textContent);
+            return deltager.startnummer < nummer;
+        });
+
+        const newRow = tbody.insertRow(indeks);
+        newRow.dataset.startnummer = deltager.startnummer;
+
+        // Startnummer
+        newRow.insertCell(-1).textContent = deltager.startnummer;
+
+        // Navn
+        newRow.insertCell(-1).textContent = deltager.navn;
+
+        // Starttid
+        const startCell = newRow.insertCell(-1);
+        const startDato = document.createElement("input");
+
+        startDato.type = "time";
+        startDato.step = "1";
+        startCell.append(startDato);
+
+        // Sluttid
+        const sluttCell = newRow.insertCell(-1);
+        const sluttDato = document.createElement("input");
+
+        sluttDato.type = "time";
+        sluttDato.step = "1";
+        sluttCell.append(sluttDato);
+
+        // Løpstid
+        const lopstidCell = newRow.insertCell(-1);
+
+        // Valider tider når de endres
+        startDato.addEventListener("input", () => {
+            this.#validerTid(startDato, sluttDato, lopstidCell);
+        });
+
+        sluttDato.addEventListener("input", () => {
+            this.#validerTid(startDato, sluttDato, lopstidCell);
+        });
+
+        // Vis tabellen
+        this.#tabellelement.classList.remove("hidden");
+
+        // Bruk aktivt filter på den nye deltageren
+        if (this.#aktivtMonster !== null) {
+            const tekst =
+                newRow.cells[Number(this.#aktivtFelt)].textContent;
+
+            this.#aktivtMonster.lastIndex = 0;
+
+            newRow.classList.toggle(
+                "hidden",
+                !this.#aktivtMonster.test(tekst)
+            );
+        }
+    }
+
+    /**
+     * Validerer starttid og sluttid og beregner løpstiden.
+     *
+     * @param {HTMLInputElement} startDato
+     * @param {HTMLInputElement} sluttDato
+     * @param {HTMLTableCellElement} lopstidCell
+     */
+    #validerTid(startDato, sluttDato, lopstidCell) {
+        let errormessage = "";
+        lopstidCell.textContent = "";
+
+        if (startDato.value !== "" && sluttDato.value !== "") {
+            if (sluttDato.value <= startDato.value) {
+                errormessage = "Sluttid må være etter starttid";
+            } else {
+                const startResult = this.#tidTilSek(startDato.value);
+                const sluttResult = this.#tidTilSek(sluttDato.value);
+
+                const totalTidResult = sluttResult - startResult;
+
+                const timer = Math.floor(totalTidResult / 3600);
+                const minutter = Math.floor(
+                    (totalTidResult % 3600) / 60
+                );
+                const sekunder = totalTidResult % 60;
+
+                lopstidCell.textContent =
+                    String(timer).padStart(2, "0") + ":" +
+                    String(minutter).padStart(2, "0") + ":" +
+                    String(sekunder).padStart(2, "0");
+            }
+        }
+
+        sluttDato.setCustomValidity(errormessage);
+        sluttDato.title = errormessage;
+    }
+
+    /**
+     * Gjør om en tid til antall sekunder.
+     *
+     * @param {string} tid
+     * @returns {number}
+     */
+    #tidTilSek(tid) {
+        const split = tid.split(":");
+
+        const t = Number(split[0]);
+        const m = Number(split[1]);
+        const s = Number(split[2] || 0);
+
+        return t * 3600 + m * 60 + s;
+    }
+
+    /**
+     * Sjekker om startnummeret allerede finnes.
+     *
+     * @param {number} startnummer
+     * @returns {boolean}
+     */
+    #startnummerFinnes(startnummer) {
+        const tbody = this.#tabellelement.tBodies[0];
+
+        const element = tbody.querySelector(
+            `tr[data-startnummer="${startnummer}"]`
+        );
+
+        return element !== null;
+    }
+}
+
+// Start applikasjonen
+const formelement = document.forms["nydeltager"];
+const tabellelement = document.getElementById("deltagere");
+
+new KonkurranseController(formelement, tabellelement);
