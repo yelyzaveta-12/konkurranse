@@ -1,10 +1,5 @@
-
 "use strict";
 
-/**
- * Håndterer innlesing av deltagere, validering,
- * visning av deltagere og filtrering.
- */
 class KonkurranseController {
     #tabellelement;
     #filterTekst;
@@ -15,10 +10,7 @@ class KonkurranseController {
     #aktivtMonster = null;
     #aktivtFelt = "0";
 
-    /**
-     * @param {HTMLFormElement} formelement
-     * @param {HTMLTableElement} tabellelement
-     */
+
     constructor(formelement, tabellelement) {
         this.#tabellelement = tabellelement;
 
@@ -66,9 +58,7 @@ class KonkurranseController {
         this.#validerNavn(navnInput);
     }
 
-    /**
-     * Aktiverer filteret for startnummer eller navn.
-     */
+
     #aktiverFilter() {
         const monster = this.#filterTekst.value;
         const valgtFelt = this.#filterForm.elements["felt"].value;
@@ -102,9 +92,7 @@ class KonkurranseController {
         }
     }
 
-    /**
-     * Fjerner filteret og viser alle deltagere.
-     */
+
     #tomFilter() {
         this.#filterTekst.setCustomValidity("");
         this.#filterTekst.value = "";
@@ -119,11 +107,7 @@ class KonkurranseController {
         }
     }
 
-    /**
-     * Registrerer en ny deltager.
-     *
-     * @param {SubmitEvent} event
-     */
+
     #registrer(event) {
         event.preventDefault();
 
@@ -147,60 +131,46 @@ class KonkurranseController {
         );
     }
 
-    /**
-     * Validerer startnummer.
-     *
-     * @param {HTMLInputElement} target
-     */
+
     #validerStartnummer(target) {
-        let errormessage = "";
+        console.log(target.validity);
 
-        if (target.validity.valueMissing) {
-            errormessage = "Startnummer er påkrevd";
-        } else if (
-            target.validity.badInput ||
-            target.validity.rangeUnderflow ||
-            target.validity.stepMismatch
-        ) {
-            errormessage =
-                "Startnummer må være et heltall større eller lik 1";
-        } else if (
-            this.#startnummerFinnes(target.valueAsNumber)
-        ) {
-            errormessage = "Startnummer er i bruk";
-        }
+                let errormessage = "";
 
-        target.setCustomValidity(errormessage);
-        target.title = errormessage;
+                if (target.validity.valueMissing) {
+                            errormessage = "Startnummer er påkrevd";
+                            } else if (target.validity.badInput) {
+                                          errormessage = "Startnummer må være et heltall";
+                                          } else if (target.validity.rangeUnderflow) {
+                                                       errormessage = "Startnummer må være et heltall større eller lik 1";
+                                                   } else if (target.validity.stepMismatch) {
+                                                                 errormessage = "Startnummer må være et heltall";
+                                                                 } else  if (this.#startnummerFinnes(target.valueAsNumber)) {
+                                                                                    errormessage = "Startnummer er i bruk";
+
+
+            }
+             target.setCustomValidity(errormessage);
+                    target.title = errormessage;
     }
 
-    /**
-     * Validerer navnet.
-     *
-     * @param {HTMLInputElement} target
-     */
+
     #validerNavn(target) {
-        let errormessage = "";
+        console.log(target.validity);
 
-        if (target.validity.valueMissing) {
-            errormessage = "Navn mangler";
-        } else if (target.validity.patternMismatch) {
-            errormessage =
-                "Navn må bestå av ett eller flere delnavn " +
-                "skilt av mellomrom eller bindestrek og hvert " +
-                "delnavn må starte med stor forbokstav etterfulgt " +
-                "av kun små bokstaver";
-        }
+                let errormessage = "";
 
-        target.setCustomValidity(errormessage);
-        target.title = errormessage;
+                if (target.validity.valueMissing) {
+                            errormessage = "Navn mangler";
+                            } else if  (target.validity.patternMismatch) {
+                                                   errormessage = "Navn må bestå av ett eller flere delnavn skilt av mellomrom eller bindestrek og hvert delnavn må starte med stor forbokstav etterfulgt av kun små bokstaver";
+                                               }
+
+                target.setCustomValidity(errormessage);
+                target.title = errormessage;
     }
 
-    /**
-     * Viser en deltager sortert etter startnummer.
-     *
-     * @param {Object} deltager
-     */
+
     #visDeltager(deltager) {
         const tbody = this.#tabellelement.tBodies[0];
         const rader = Array.from(tbody.rows);
@@ -255,13 +225,7 @@ class KonkurranseController {
         }
     }
 
-    /**
-     * Validerer starttid og sluttid og beregner løpstiden.
-     *
-     * @param {HTMLInputElement} startDato
-     * @param {HTMLInputElement} sluttDato
-     * @param {HTMLTableCellElement} lopstidCell
-     */
+
     #validerTid(startDato, sluttDato, lopstidCell) {
         let errormessage = "";
         lopstidCell.textContent = "";
@@ -292,12 +256,7 @@ class KonkurranseController {
         sluttDato.title = errormessage;
     }
 
-    /**
-     * Gjør om en tid til antall sekunder.
-     *
-     * @param {string} tid
-     * @returns {number}
-     */
+
     #tidTilSek(tid) {
         const split = tid.split(":");
 
@@ -308,12 +267,6 @@ class KonkurranseController {
         return t * 3600 + m * 60 + s;
     }
 
-    /**
-     * Sjekker om startnummeret allerede finnes.
-     *
-     * @param {number} startnummer
-     * @returns {boolean}
-     */
     #startnummerFinnes(startnummer) {
         const tbody = this.#tabellelement.tBodies[0];
 
@@ -322,6 +275,27 @@ class KonkurranseController {
         );
 
         return element !== null;
+    }
+
+
+    #fyllListe() {
+        this.#tabellelement.classList.remove('hidden');
+
+        const liste = [
+                {'startnummer': 567, 'navn': 'Per Persen'},
+                {'startnummer': 127, 'navn': 'Anne Annesen'},
+                {'startnummer': 838, 'navn': 'Jo Josen'},
+                {'startnummer': 57, 'navn': 'Gro Grosen'},
+                {'startnummer': 9, 'navn': 'Hanne Hannesen'},
+                {'startnummer': 65, 'navn': 'Jo Josen'},
+                {'startnummer': 7476, 'navn': 'Mette Metteson'}
+        ];
+
+            for (const deltager of liste) {
+                if (!this.#startnummerFinnes(deltager.startnummer)) {
+                    this.#visDeltager(deltager);
+                }
+            }
     }
 }
 
